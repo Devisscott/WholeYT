@@ -1,0 +1,446 @@
+{% extends "base.html" %}
+
+{% block title %}Home - Social Media Downloader{% endblock %}
+
+{% block content %}
+<div class="max-w-4xl mx-auto space-y-8">
+    <!-- Hero Section -->
+    <div class="text-center space-y-4">
+        <div class="animate-float">
+            <i data-lucide="download-cloud" class="w-20 h-20 text-white mx-auto mb-4"></i>
+        </div>
+        <h1 class="text-4xl md:text-6xl font-bold text-white mb-4">
+            Download from <span class="bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent">Anywhere</span>
+        </h1>
+        <p class="text-xl text-blue-100 max-w-2xl mx-auto">
+            Download videos, reels, and posts from YouTube, Instagram, Facebook, Twitter, and more with our powerful, privacy-focused tool.
+        </p>
+    </div>
+
+    <!-- Main Download Card -->
+    <div class="glass rounded-2xl p-8 space-y-6">
+        <div class="flex items-center space-x-2 mb-6">
+            <i data-lucide="link" class="w-6 h-6 text-white"></i>
+            <h2 class="text-2xl font-bold text-white">Quick Download</h2>
+        </div>
+
+        <!-- URL Input -->
+        <div class="space-y-4">
+            <div class="relative">
+                <input 
+                    type="url" 
+                    id="video-url" 
+                    placeholder="Paste your video URL here (YouTube, Instagram, Facebook, Twitter, etc.)"
+                    class="w-full p-4 pr-12 rounded-lg glass text-white placeholder-blue-200 focus:outline-none focus:ring-2 focus:ring-blue-400 transition-all duration-200"
+                >
+                <button id="paste-btn" class="absolute right-3 top-1/2 transform -translate-y-1/2 text-blue-300 hover:text-white transition-colors">
+                    <i data-lucide="clipboard" class="w-5 h-5"></i>
+                </button>
+            </div>
+            
+            <button id="preview-btn" class="w-full btn-primary text-white font-semibold py-3 px-6 rounded-lg flex items-center justify-center space-x-2">
+                <i data-lucide="eye" class="w-5 h-5"></i>
+                <span>Preview Video</span>
+            </button>
+        </div>
+
+        <!-- Video Preview -->
+        <div id="video-preview" class="hidden space-y-4">
+            <div class="glass rounded-lg p-6">
+                <div class="flex flex-col md:flex-row space-y-4 md:space-y-0 md:space-x-6">
+                    <div class="flex-shrink-0">
+                        <img id="video-thumbnail" src="" alt="Video thumbnail" class="w-full md:w-48 h-32 object-cover rounded-lg">
+                    </div>
+                    <div class="flex-1 space-y-2">
+                        <h3 id="video-title" class="text-xl font-semibold text-white"></h3>
+                        <p id="video-uploader" class="text-blue-200"></p>
+                        <div class="flex items-center space-x-4 text-sm text-blue-300">
+                            <span id="video-duration"></span>
+                            <span id="video-views"></span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Download Options -->
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <!-- Format Selection -->
+                <div class="glass rounded-lg p-4">
+                    <label class="block text-white font-semibold mb-2">
+                        <i data-lucide="settings" class="w-4 h-4 inline mr-2"></i>
+                        Download Format
+                    </label>
+                    <select id="format-select" class="w-full p-3 rounded-lg glass text-white focus:outline-none focus:ring-2 focus:ring-blue-400">
+                        <option value="best">Best Quality (Video + Audio)</option>
+                        <option value="worst">Fastest Download (Lower Quality)</option>
+                        <option value="bestvideo+bestaudio">Best Video + Best Audio</option>
+                        <option value="bestaudio">Audio Only (MP3)</option>
+                        <option value="720p">720p HD</option>
+                        <option value="480p">480p SD</option>
+                        <option value="360p">360p Mobile</option>
+                    </select>
+                </div>
+
+                <!-- Cookies Upload -->
+                <div class="glass rounded-lg p-4">
+                    <label class="block text-white font-semibold mb-2">
+                        <i data-lucide="cookie" class="w-4 h-4 inline mr-2"></i>
+                        Cookies (Optional)
+                    </label>
+                    <input type="file" id="cookies-file" accept=".txt" class="w-full p-3 rounded-lg glass text-white file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:bg-blue-600 file:text-white hover:file:bg-blue-700">
+                    <p class="text-xs text-blue-300 mt-1">Upload cookies.txt for private content</p>
+                </div>
+            </div>
+
+            <!-- Download Button -->
+            <button id="download-btn" class="w-full btn-primary text-white font-bold py-4 px-6 rounded-lg flex items-center justify-center space-x-2 text-lg">
+                <i data-lucide="download" class="w-6 h-6"></i>
+                <span>Start Download</span>
+            </button>
+        </div>
+
+        <!-- Download Progress -->
+        <div id="download-progress" class="hidden space-y-4">
+            <div class="glass rounded-lg p-6">
+                <div class="flex items-center justify-between mb-4">
+                    <h3 class="text-lg font-semibold text-white">Downloading...</h3>
+                    <span id="progress-percentage" class="text-blue-300 font-mono">0%</span>
+                </div>
+                
+                <div class="w-full bg-gray-700 rounded-full h-3 mb-4">
+                    <div id="progress-bar" class="progress-bar h-3 rounded-full transition-all duration-300" style="width: 0%"></div>
+                </div>
+                
+                <div class="flex justify-between text-sm text-blue-300">
+                    <span id="download-speed">Speed: --</span>
+                    <span id="download-eta">ETA: --</span>
+                </div>
+                
+                <div class="mt-4">
+                    <p id="download-filename" class="text-white text-sm truncate"></p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Quick Actions -->
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <a href="/bulk" class="glass glass-hover rounded-xl p-6 text-center group">
+            <i data-lucide="list" class="w-12 h-12 text-blue-300 mx-auto mb-4 group-hover:scale-110 transition-transform"></i>
+            <h3 class="text-xl font-semibold text-white mb-2">Bulk Download</h3>
+            <p class="text-blue-200">Download multiple videos at once</p>
+        </a>
+        
+        <a href="/grabber" class="glass glass-hover rounded-xl p-6 text-center group">
+            <i data-lucide="search" class="w-12 h-12 text-purple-300 mx-auto mb-4 group-hover:scale-110 transition-transform"></i>
+            <h3 class="text-xl font-semibold text-white mb-2">Link Grabber</h3>
+            <p class="text-blue-200">Extract all links from playlists</p>
+        </a>
+        
+        <div class="glass glass-hover rounded-xl p-6 text-center group cursor-pointer" onclick="generateQR()">
+            <i data-lucide="qr-code" class="w-12 h-12 text-green-300 mx-auto mb-4 group-hover:scale-110 transition-transform"></i>
+            <h3 class="text-xl font-semibold text-white mb-2">QR Code</h3>
+            <p class="text-blue-200">Generate QR for mobile download</p>
+        </div>
+    </div>
+
+    <!-- Features Grid -->
+    <div class="glass rounded-2xl p-8">
+        <h2 class="text-2xl font-bold text-white mb-6 text-center">Why Choose Our Downloader?</h2>
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+            <div class="text-center space-y-2">
+                <i data-lucide="shield-check" class="w-10 h-10 text-green-400 mx-auto"></i>
+                <h3 class="font-semibold text-white">Privacy First</h3>
+                <p class="text-sm text-blue-200">No data tracking or storage</p>
+            </div>
+            <div class="text-center space-y-2">
+                <i data-lucide="zap" class="w-10 h-10 text-yellow-400 mx-auto"></i>
+                <h3 class="font-semibold text-white">Lightning Fast</h3>
+                <p class="text-sm text-blue-200">Optimized download speeds</p>
+            </div>
+            <div class="text-center space-y-2">
+                <i data-lucide="smartphone" class="w-10 h-10 text-blue-400 mx-auto"></i>
+                <h3 class="font-semibold text-white">Mobile Friendly</h3>
+                <p class="text-sm text-blue-200">Works on all devices</p>
+            </div>
+            <div class="text-center space-y-2">
+                <i data-lucide="globe" class="w-10 h-10 text-purple-400 mx-auto"></i>
+                <h3 class="font-semibold text-white">Multi-Platform</h3>
+                <p class="text-sm text-blue-200">Supports 1000+ sites</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- QR Code Modal -->
+<div id="qr-modal" class="fixed inset-0 bg-black bg-opacity-50 backdrop-blur-sm z-50 hidden items-center justify-center p-4">
+    <div class="glass rounded-2xl p-8 max-w-md w-full text-center">
+        <h3 class="text-2xl font-bold text-white mb-4">QR Code</h3>
+        <div id="qr-code" class="bg-white p-4 rounded-lg mb-4 mx-auto inline-block"></div>
+        <p class="text-blue-200 mb-6">Scan with your phone to download</p>
+        <button onclick="closeQRModal()" class="btn-primary text-white px-6 py-2 rounded-lg">Close</button>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js"></script>
+<script>
+    let currentDownloadId = null;
+    let progressInterval = null;
+
+    // DOM elements
+    const videoUrlInput = document.getElementById('video-url');
+    const previewBtn = document.getElementById('preview-btn');
+    const downloadBtn = document.getElementById('download-btn');
+    const pasteBtn = document.getElementById('paste-btn');
+    const videoPreview = document.getElementById('video-preview');
+    const downloadProgress = document.getElementById('download-progress');
+    const formatSelect = document.getElementById('format-select');
+    const cookiesFile = document.getElementById('cookies-file');
+
+    // Event listeners
+    pasteBtn.addEventListener('click', async () => {
+        try {
+            const text = await navigator.clipboard.readText();
+            videoUrlInput.value = text;
+            showToast('URL pasted successfully', 'success');
+        } catch (err) {
+            showToast('Failed to paste from clipboard', 'error');
+        }
+    });
+
+    previewBtn.addEventListener('click', previewVideo);
+    downloadBtn.addEventListener('click', startDownload);
+
+    // Auto-preview when URL is pasted
+    videoUrlInput.addEventListener('paste', () => {
+        setTimeout(previewVideo, 100);
+    });
+
+    async function previewVideo() {
+        const url = videoUrlInput.value.trim();
+        if (!url) {
+            showToast('Please enter a video URL', 'error');
+            return;
+        }
+
+        showLoading();
+        previewBtn.disabled = true;
+        previewBtn.innerHTML = '<div class="loading-spinner"></div><span>Loading...</span>';
+
+        try {
+            const response = await fetch('/api/video-info', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ url: url })
+            });
+
+            const data = await response.json();
+
+            if (data.error) {
+                throw new Error(data.error);
+            }
+
+            // Update preview
+            document.getElementById('video-thumbnail').src = data.thumbnail || '/static/placeholder.jpg';
+            document.getElementById('video-title').textContent = data.title;
+            document.getElementById('video-uploader').textContent = `By ${data.uploader}`;
+            document.getElementById('video-duration').textContent = formatDuration(data.duration);
+            document.getElementById('video-views').textContent = formatViews(data.view_count);
+
+            videoPreview.classList.remove('hidden');
+            showToast('Video preview loaded', 'success');
+
+        } catch (error) {
+            console.error('Preview error:', error);
+            showToast(`Failed to load video: ${error.message}`, 'error');
+        } finally {
+            hideLoading();
+            previewBtn.disabled = false;
+            previewBtn.innerHTML = '<i data-lucide="eye" class="w-5 h-5"></i><span>Preview Video</span>';
+            lucide.createIcons();
+        }
+    }
+
+    async function startDownload() {
+        const url = videoUrlInput.value.trim();
+        const format = formatSelect.value;
+        
+        if (!url) {
+            showToast('Please enter a video URL', 'error');
+            return;
+        }
+
+        // Handle cookies file
+        let cookiesPath = null;
+        if (cookiesFile.files.length > 0) {
+            const formData = new FormData();
+            formData.append('cookies', cookiesFile.files[0]);
+            
+            try {
+                const uploadResponse = await fetch('/api/upload-cookies', {
+                    method: 'POST',
+                    body: formData
+                });
+                const uploadData = await uploadResponse.json();
+                if (uploadData.path) {
+                    cookiesPath = uploadData.path;
+                }
+            } catch (error) {
+                console.error('Cookie upload error:', error);
+            }
+        }
+
+        downloadBtn.disabled = true;
+        downloadBtn.innerHTML = '<div class="loading-spinner"></div><span>Starting...</span>';
+
+        try {
+            const response = await fetch('/api/download', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    url: url,
+                    format: format,
+                    cookies_file: cookiesPath
+                })
+            });
+
+            const data = await response.json();
+
+            if (data.error) {
+                throw new Error(data.error);
+            }
+
+            currentDownloadId = data.download_id;
+            videoPreview.classList.add('hidden');
+            downloadProgress.classList.remove('hidden');
+            
+            // Start progress monitoring
+            startProgressMonitoring();
+            showToast('Download started', 'success');
+
+        } catch (error) {
+            console.error('Download error:', error);
+            showToast(`Download failed: ${error.message}`, 'error');
+        } finally {
+            downloadBtn.disabled = false;
+            downloadBtn.innerHTML = '<i data-lucide="download" class="w-6 h-6"></i><span>Start Download</span>';
+            lucide.createIcons();
+        }
+    }
+
+    function startProgressMonitoring() {
+        if (progressInterval) {
+            clearInterval(progressInterval);
+        }
+
+        progressInterval = setInterval(async () => {
+            if (!currentDownloadId) return;
+
+            try {
+                const response = await fetch(`/api/download-progress/${currentDownloadId}`);
+                const data = await response.json();
+
+                if (data.error) {
+                    throw new Error(data.error);
+                }
+
+                updateProgress(data);
+
+                if (data.completed || data.status === 'error') {
+                    clearInterval(progressInterval);
+                    if (data.completed) {
+                        showToast('Download completed successfully!', 'success');
+                    } else if (data.error) {
+                        showToast(`Download failed: ${data.error}`, 'error');
+                    }
+                }
+
+            } catch (error) {
+                console.error('Progress error:', error);
+                clearInterval(progressInterval);
+            }
+        }, 1000);
+    }
+
+    function updateProgress(data) {
+        const progressBar = document.getElementById('progress-bar');
+        const progressPercentage = document.getElementById('progress-percentage');
+        const downloadSpeed = document.getElementById('download-speed');
+        const downloadEta = document.getElementById('download-eta');
+        const downloadFilename = document.getElementById('download-filename');
+
+        progressBar.style.width = `${data.progress}%`;
+        progressPercentage.textContent = `${Math.round(data.progress)}%`;
+        downloadSpeed.textContent = `Speed: ${data.speed || '--'}`;
+        downloadEta.textContent = `ETA: ${data.eta || '--'}`;
+        downloadFilename.textContent = data.filename || 'Preparing download...';
+    }
+
+    function formatDuration(seconds) {
+        if (!seconds) return 'Unknown';
+        const hours = Math.floor(seconds / 3600);
+        const minutes = Math.floor((seconds % 3600) / 60);
+        const secs = seconds % 60;
+        
+        if (hours > 0) {
+            return `${hours}:${minutes.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+        }
+        return `${minutes}:${secs.toString().padStart(2, '0')}`;
+    }
+
+    function formatViews(views) {
+        if (!views) return 'Unknown views';
+        if (views >= 1000000) {
+            return `${(views / 1000000).toFixed(1)}M views`;
+        } else if (views >= 1000) {
+            return `${(views / 1000).toFixed(1)}K views`;
+        }
+        return `${views} views`;
+    }
+
+    function generateQR() {
+        const url = videoUrlInput.value.trim();
+        if (!url) {
+            showToast('Please enter a video URL first', 'error');
+            return;
+        }
+
+        const qrContainer = document.getElementById('qr-code');
+        qrContainer.innerHTML = '';
+        
+        QRCode.toCanvas(qrContainer, url, {
+            width: 200,
+            margin: 2,
+            color: {
+                dark: '#000000',
+                light: '#FFFFFF'
+            }
+        }, (error) => {
+            if (error) {
+                showToast('Failed to generate QR code', 'error');
+                return;
+            }
+            document.getElementById('qr-modal').classList.remove('hidden');
+            document.getElementById('qr-modal').classList.add('flex');
+        });
+    }
+
+    function closeQRModal() {
+        document.getElementById('qr-modal').classList.add('hidden');
+        document.getElementById('qr-modal').classList.remove('flex');
+    }
+
+    // Close modal on outside click
+    document.getElementById('qr-modal').addEventListener('click', (e) => {
+        if (e.target === e.currentTarget) {
+            closeQRModal();
+        }
+    });
+</script>
+{% endblock %}

@@ -1,0 +1,570 @@
+{% extends "base.html" %}
+
+{% block title %}Link Grabber - Social Media Downloader{% endblock %}
+
+{% block content %}
+<div class="max-w-6xl mx-auto space-y-8">
+    <!-- Header -->
+    <div class="text-center space-y-4">
+        <div class="animate-float">
+            <i data-lucide="link-2" class="w-16 h-16 text-white mx-auto mb-4"></i>
+        </div>
+        <h1 class="text-4xl md:text-5xl font-bold text-white mb-4">
+            Link <span class="bg-gradient-to-r from-purple-400 to-pink-400 bg-clip-text text-transparent">Grabber</span>
+        </h1>
+        <p class="text-xl text-blue-100 max-w-2xl mx-auto">
+            Extract all media links from playlists, profiles, or any webpage with our powerful yt-dlp integration.
+        </p>
+    </div>
+
+    <!-- Link Grabber Card -->
+    <div class="glass rounded-2xl p-8 space-y-6">
+        <div class="flex items-center space-x-2 mb-6">
+            <i data-lucide="search" class="w-6 h-6 text-white"></i>
+            <h2 class="text-2xl font-bold text-white">Extract Media Links</h2>
+        </div>
+
+        <!-- URL Input -->
+        <div class="space-y-4">
+            <div class="relative">
+                <input 
+                    type="url" 
+                    id="page-url" 
+                    placeholder="Enter page URL (playlist, profile, channel, etc.)"
+                    class="w-full p-4 pr-12 rounded-lg glass text-white placeholder-blue-200 focus:outline-none focus:ring-2 focus:ring-blue-400 transition-all duration-200"
+                >
+                <button id="paste-page-btn" class="absolute right-3 top-1/2 transform -translate-y-1/2 text-blue-300 hover:text-white transition-colors">
+                    <i data-lucide="clipboard" class="w-5 h-5"></i>
+                </button>
+            </div>
+            
+            <!-- Options -->
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <!-- Filter Selection -->
+                <div class="glass rounded-lg p-4">
+                    <label class="block text-white font-semibold mb-2">
+                        <i data-lucide="filter" class="w-4 h-4 inline mr-2"></i>
+                        Media Type Filter
+                    </label>
+                    <select id="media-filter" class="w-full p-3 rounded-lg glass text-white focus:outline-none focus:ring-2 focus:ring-blue-400">
+                        <option value="all" selected>All Media</option>
+                        <option value="video">Videos Only</option>
+                        <option value="audio">Audio Only</option>
+                        <option value="image">Images Only</option>
+                    </select>
+                </div>
+
+                <!-- Cookies Upload -->
+                <div class="glass rounded-lg p-4">
+                    <label class="block text-white font-semibold mb-2">
+                        <i data-lucide="cookie" class="w-4 h-4 inline mr-2"></i>
+                        Cookies (Optional)
+                    </label>
+                    <input type="file" id="grabber-cookies-file" accept=".txt" class="w-full p-3 rounded-lg glass text-white file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:bg-blue-600 file:text-white hover:file:bg-blue-700">
+                    <p class="text-xs text-blue-300 mt-1">Upload cookies.txt for private content</p>
+                </div>
+            </div>
+            
+            <button id="extract-btn" class="w-full btn-primary text-white font-semibold py-3 px-6 rounded-lg flex items-center justify-center space-x-2">
+                <i data-lucide="search" class="w-5 h-5"></i>
+                <span>Extract Links</span>
+            </button>
+        </div>
+    </div>
+
+    <!-- Results Section -->
+    <div id="results-section" class="glass rounded-2xl p-8 space-y-6 hidden">
+        <div class="flex items-center justify-between mb-6">
+            <div class="flex items-center space-x-2">
+                <i data-lucide="list" class="w-6 h-6 text-white"></i>
+                <h2 class="text-2xl font-bold text-white">Extracted Links</h2>
+            </div>
+            <div class="flex items-center space-x-2 text-sm text-blue-300">
+                <span id="results-count">0 links found</span>
+            </div>
+        </div>
+
+        <!-- Action Buttons -->
+        <div class="flex flex-wrap gap-4">
+            <button id="select-all-btn" class="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-4 rounded-lg flex items-center justify-center space-x-2 transition-all duration-200">
+                <i data-lucide="check-square" class="w-4 h-4"></i>
+                <span>Select All</span>
+            </button>
+            <button id="copy-selected-btn" class="bg-green-600 hover:bg-green-700 text-white font-semibold py-2 px-4 rounded-lg flex items-center justify-center space-x-2 transition-all duration-200 disabled:opacity-50" disabled>
+                <i data-lucide="copy" class="w-4 h-4"></i>
+                <span>Copy Selected</span>
+            </button>
+            <button id="export-all-btn" class="bg-purple-600 hover:bg-purple-700 text-white font-semibold py-2 px-4 rounded-lg flex items-center justify-center space-x-2 transition-all duration-200 disabled:opacity-50" disabled>
+                <i data-lucide="download" class="w-4 h-4"></i>
+                <span>Export All</span>
+            </button>
+            <button id="download-selected-btn" class="bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-2 px-4 rounded-lg flex items-center justify-center space-x-2 transition-all duration-200 disabled:opacity-50" disabled>
+                <i data-lucide="play" class="w-4 h-4"></i>
+                <span>Download Selected</span>
+            </button>
+        </div>
+
+        <!-- Results List -->
+        <div id="results-list" class="space-y-2 max-h-96 overflow-y-auto">
+            <!-- Results will be dynamically added here -->
+        </div>
+    </div>
+
+    <!-- Download Format Modal -->
+    <div id="download-modal" class="fixed inset-0 bg-black bg-opacity-50 backdrop-blur-sm z-50 hidden items-center justify-center p-4">
+        <div class="glass rounded-2xl p-8 max-w-md w-full">
+            <h3 class="text-2xl font-bold text-white mb-4">Download Options</h3>
+            <div class="space-y-4">
+                <div class="glass rounded-lg p-4">
+                    <label class="block text-white font-semibold mb-2">
+                        <i data-lucide="settings" class="w-4 h-4 inline mr-2"></i>
+                        Download Format
+                    </label>
+                    <select id="download-format-select" class="w-full p-3 rounded-lg glass text-white focus:outline-none focus:ring-2 focus:ring-blue-400">
+                        <option value="best">Best Quality</option>
+                        <option value="worst">Fastest Download</option>
+                        <option value="bestvideo+bestaudio">Best Video + Audio</option>
+                        <option value="bestaudio">Audio Only (MP3)</option>
+                        <option value="720p">720p HD</option>
+                        <option value="480p">480p SD</option>
+                        <option value="360p">360p Mobile</option>
+                    </select>
+                </div>
+                <div class="flex space-x-4">
+                    <button id="confirm-download-btn" class="flex-1 btn-primary text-white font-semibold py-2 px-4 rounded-lg">Confirm Download</button>
+                    <button id="cancel-download-btn" class="flex-1 bg-gray-600 hover:bg-gray-700 text-white font-semibold py-2 px-4 rounded-lg">Cancel</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Quick Actions -->
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <a href="/" class="glass glass-hover rounded-xl p-6 text-center group">
+            <i data-lucide="home" class="w-12 h-12 text-blue-300 mx-auto mb-4 group-hover:scale-110 transition-transform"></i>
+            <h3 class="text-xl font-semibold text-white mb-2">Home</h3>
+            <p class="text-blue-200">Single video download</p>
+        </a>
+        
+        <a href="/bulk" class="glass glass-hover rounded-xl p-6 text-center group">
+            <i data-lucide="list" class="w-12 h-12 text-green-300 mx-auto mb-4 group-hover:scale-110 transition-transform"></i>
+            <h3 class="text-xl font-semibold text-white mb-2">Bulk Download</h3>
+            <p class="text-blue-200">Download multiple videos</p>
+        </a>
+        
+        <div class="glass glass-hover rounded-xl p-6 text-center group cursor-pointer" onclick="showTutorial()">
+            <i data-lucide="help-circle" class="w-12 h-12 text-purple-300 mx-auto mb-4 group-hover:scale-110 transition-transform"></i>
+            <h3 class="text-xl font-semibold text-white mb-2">Tutorial</h3>
+            <p class="text-blue-200">Learn how to use Link Grabber</p>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+    let extractedLinks = [];
+    let selectedLinks = new Set();
+
+    // DOM elements
+    const pageUrlInput = document.getElementById('page-url');
+    const pastePageBtn = document.getElementById('paste-page-btn');
+    const extractBtn = document.getElementById('extract-btn');
+    const mediaFilter = document.getElementById('media-filter');
+    const grabberCookiesFile = document.getElementById('grabber-cookies-file');
+    const resultsSection = document.getElementById('results-section');
+    const resultsList = document.getElementById('results-list');
+    const resultsCount = document.getElementById('results-count');
+    const selectAllBtn = document.getElementById('select-all-btn');
+    const copySelectedBtn = document.getElementById('copy-selected-btn');
+    const exportAllBtn = document.getElementById('export-all-btn');
+    const downloadSelectedBtn = document.getElementById('download-selected-btn');
+    const downloadModal = document.getElementById('download-modal');
+    const downloadFormatSelect = document.getElementById('download-format-select');
+    const confirmDownloadBtn = document.getElementById('confirm-download-btn');
+    const cancelDownloadBtn = document.getElementById('cancel-download-btn');
+
+    // Event listeners
+    pastePageBtn.addEventListener('click', async () => {
+        try {
+            const text = await navigator.clipboard.readText();
+            pageUrlInput.value = text;
+            showToast('URL pasted successfully', 'success');
+        } catch (err) {
+            showToast('Failed to paste from clipboard', 'error');
+        }
+    });
+
+    extractBtn.addEventListener('click', extractLinks);
+    selectAllBtn.addEventListener('click', selectAll);
+    copySelectedBtn.addEventListener('click', copySelected);
+    exportAllBtn.addEventListener('click', exportAll);
+    downloadSelectedBtn.addEventListener('click', showDownloadModal);
+    confirmDownloadBtn.addEventListener('click', confirmDownload);
+    cancelDownloadBtn.addEventListener('click', closeDownloadModal);
+
+    // Close modal on outside click
+    downloadModal.addEventListener('click', (e) => {
+        if (e.target === e.currentTarget) {
+            closeDownloadModal();
+        }
+    });
+
+    async function extractLinks() {
+        const url = pageUrlInput.value.trim();
+        if (!url) {
+            showToast('Please enter a page URL', 'error');
+            return;
+        }
+
+        // Handle cookies file
+        let cookiesPath = null;
+        if (grabberCookiesFile.files.length > 0) {
+            const formData = new FormData();
+            formData.append('cookies', grabberCookiesFile.files[0]);
+            
+            try {
+                const uploadResponse = await fetch('/api/upload-cookies', {
+                    method: 'POST',
+                    body: formData
+                });
+                const uploadData = await uploadResponse.json();
+                if (uploadData.path) {
+                    cookiesPath = uploadData.path;
+                }
+            } catch (error) {
+                console.error('Cookie upload error:', error);
+            }
+        }
+
+        showLoading();
+        extractBtn.disabled = true;
+        extractBtn.innerHTML = '<div class="loading-spinner"></div><span>Extracting...</span>';
+
+        try {
+            const response = await fetch('/api/extract-links', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    url: url,
+                    cookies_file: cookiesPath
+                })
+            });
+
+            const data = await response.json();
+
+            if (data.error) {
+                throw new Error(data.error);
+            }
+
+            extractedLinks = data.links;
+            displayResults();
+            resultsSection.classList.remove('hidden');
+            resultsCount.textContent = `${extractedLinks.length} links found`;
+            exportAllBtn.disabled = extractedLinks.length === 0;
+            showToast(`Found ${extractedLinks.length} media links`, 'success');
+
+        } catch (error) {
+            console.error('Extraction error:', error);
+            showToast(`Failed to extract links: ${error.message}`, 'error');
+        } finally {
+            hideLoading();
+            extractBtn.disabled = false;
+            extractBtn.innerHTML = '<i data-lucide="search" class="w-5 h-5"></i><span>Extract Links</span>';
+            lucide.createIcons();
+        }
+    }
+
+    function displayResults() {
+        resultsList.innerHTML = '';
+        selectedLinks.clear();
+        updateSelectionButtons();
+
+        if (extractedLinks.length === 0) {
+            resultsList.innerHTML = `
+                <div class="text-center py-8 text-blue-300">
+                    <i data-lucide="alert-circle" class="w-12 h-12 mx-auto mb-2"></i>
+                    <p>No links found. Try a different URL or upload cookies for private content.</p>
+                </div>
+            `;
+            lucide.createIcons();
+            return;
+        }
+
+        extractedLinks.forEach((link, index) => {
+            const resultItem = document.createElement('div');
+            resultItem.className = 'glass rounded-lg p-4 hover:bg-opacity-10 transition-all duration-200 cursor-pointer';
+            resultItem.id = `result-item-${index}`;
+            
+            resultItem.innerHTML = `
+                <div class="flex items-center justify-between">
+                    <div class="flex items-center space-x-3 flex-1">
+                        <div class="w-12 h-12 bg-gray-600 rounded-lg flex items-center justify-center">
+                            ${link.thumbnail ? 
+                                `<img src="${link.thumbnail}" alt="Thumbnail" class="w-12 h-12 object-cover rounded-lg">` : 
+                                `<i data-lucide="video" class="w-6 h-6 text-gray-400"></i>`
+                            }
+                        </div>
+                        <div class="flex-1 min-w-0">
+                            <h4 class="text-white font-semibold truncate">${link.title}</h4>
+                            <p class="text-blue-300 text-sm truncate">${link.url}</p>
+                            ${link.duration ? 
+                                `<p class="text-blue-400 text-xs">${formatDuration(link.duration)}</p>` : ''
+                            }
+                        </div>
+                    </div>
+                    <div class="flex items-center space-x-2">
+                        <button onclick="copySingleLink(${index})" class="text-blue-400 hover:text-blue-300 transition-colors">
+                            <i data-lucide="copy" class="w-4 h-4"></i>
+                        </button>
+                        <button onclick="downloadSingleLink(${index})" class="text-green-400 hover:text-green-300 transition-colors">
+                            <i data-lucide="download" class="w-4 h-4"></i>
+                        </button>
+                        <input type="checkbox" id="checkbox-${index}" class="w-5 h-5 text-blue-600 rounded" onchange="toggleSelection(${index})">
+                    </div>
+                </div>
+            `;
+            
+            resultsList.appendChild(resultItem);
+        });
+        
+        lucide.createIcons();
+    }
+
+    function toggleSelection(index) {
+        const checkbox = document.getElementById(`checkbox-${index}`);
+        const itemElement = document.getElementById(`result-item-${index}`);
+        
+        if (checkbox.checked) {
+            selectedLinks.add(index);
+            itemElement.classList.add('border-blue-500', 'bg-blue-500', 'bg-opacity-10');
+        } else {
+            selectedLinks.delete(index);
+            itemElement.classList.remove('border-blue-500', 'bg-blue-500', 'bg-opacity-10');
+        }
+        
+        updateSelectionButtons();
+    }
+
+    function selectAll() {
+        const checkboxes = document.querySelectorAll('#results-list input[type="checkbox"]');
+        const allSelected = selectedLinks.size === extractedLinks.length;
+        
+        checkboxes.forEach((checkbox, index) => {
+            checkbox.checked = !allSelected;
+            toggleSelection(index);
+        });
+        
+        if (allSelected) {
+            selectAllBtn.innerHTML = '<i data-lucide="check-square" class="w-4 h-4"></i><span>Select All</span>';
+        } else {
+            selectAllBtn.innerHTML = '<i data-lucide="square" class="w-4 h-4"></i><span>Deselect All</span>';
+        }
+        lucide.createIcons();
+    }
+
+    function updateSelectionButtons() {
+        copySelectedBtn.disabled = selectedLinks.size === 0;
+        downloadSelectedBtn.disabled = selectedLinks.size === 0;
+    }
+
+    function copySelected() {
+        if (selectedLinks.size === 0) {
+            showToast('No links selected', 'error');
+            return;
+        }
+
+        const selectedUrls = Array.from(selectedLinks).map(index => extractedLinks[index].url);
+        navigator.clipboard.writeText(selectedUrls.join('\n'))
+            .then(() => {
+                showToast(`${selectedLinks.size} links copied to clipboard`, 'success');
+            })
+            .catch(err => {
+                showToast('Failed to copy links', 'error');
+                console.error('Clipboard copy error:', err);
+            });
+    }
+
+    function exportAll() {
+        if (extractedLinks.length === 0) {
+            showToast('No links to export', 'error');
+            return;
+        }
+
+        const urls = extractedLinks.map(link => link.url).join('\n');
+        const blob = new Blob([urls], { type: 'text/plain' });
+        const url = URL.createObjectURL(blob);
+        
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `extracted-links-${new Date().toISOString().split('T')[0]}.txt`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+        
+        showToast('All links exported successfully', 'success');
+    }
+
+    function showDownloadModal() {
+        downloadModal.classList.remove('hidden');
+        downloadModal.classList.add('flex');
+    }
+
+    function closeDownloadModal() {
+        downloadModal.classList.add('hidden');
+        downloadModal.classList.remove('flex');
+    }
+
+    async function confirmDownload() {
+        if (selectedLinks.size === 0) {
+            showToast('No links selected', 'error');
+            closeDownloadModal();
+            return;
+        }
+
+        // Handle cookies file
+        let cookiesPath = null;
+        if (grabberCookiesFile.files.length > 0) {
+            const formData = new FormData();
+            formData.append('cookies', grabberCookiesFile.files[0]);
+            
+            try {
+                const uploadResponse = await fetch('/api/upload-cookies', {
+                    method: 'POST',
+                    body: formData
+                });
+                const uploadData = await uploadResponse.json();
+                if (uploadData.path) {
+                    cookiesPath = uploadData.path;
+                }
+            } catch (error) {
+                console.error('Cookie upload error:', error);
+            }
+        }
+
+        const selectedUrls = Array.from(selectedLinks).map(index => extractedLinks[index].url);
+        const format = downloadFormatSelect.value;
+
+        showLoading();
+        confirmDownloadBtn.disabled = true;
+        confirmDownloadBtn.innerHTML = '<div class="loading-spinner"></div><span>Starting...</span>';
+
+        try {
+            const response = await fetch('/api/bulk-download', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    urls: selectedUrls,
+                    format: format,
+                    cookies_file: cookiesPath
+                })
+            });
+
+            const data = await response.json();
+
+            if (data.error) {
+                throw new Error(data.error);
+            }
+
+            showToast(`Started download for ${selectedLinks.size} links`, 'success');
+            closeDownloadModal();
+
+        } catch (error) {
+            console.error('Download error:', error);
+            showToast(`Download failed: ${error.message}`, 'error');
+        } finally {
+            hideLoading();
+            confirmDownloadBtn.disabled = false;
+            confirmDownloadBtn.innerHTML = 'Confirm Download';
+        }
+    }
+
+    function copySingleLink(index) {
+        navigator.clipboard.writeText(extractedLinks[index].url)
+            .then(() => {
+                showToast('Link copied to clipboard', 'success');
+            })
+            .catch(err => {
+                showToast('Failed to copy link', 'error');
+                console.error('Clipboard copy error:', err);
+            });
+    }
+
+    async function downloadSingleLink(index) {
+        // Handle cookies file
+        let cookiesPath = null;
+        if (grabberCookiesFile.files.length > 0) {
+            const formData = new FormData();
+            formData.append('cookies', grabberCookiesFile.files[0]);
+            
+            try {
+                const uploadResponse = await fetch('/api/upload-cookies', {
+                    method: 'POST',
+                    body: formData
+                });
+                const uploadData = await uploadResponse.json();
+                if (uploadData.path) {
+                    cookiesPath = uploadData.path;
+                }
+            } catch (error) {
+                console.error('Cookie upload error:', error);
+            }
+        }
+
+        showLoading();
+        try {
+            const response = await fetch('/api/download', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    url: extractedLinks[index].url,
+                    format: 'best',
+                    cookies_file: cookiesPath
+                })
+            });
+
+            const data = await response.json();
+
+            if (data.error) {
+                throw new Error(data.error);
+            }
+
+            showToast('Download started', 'success');
+
+        } catch (error) {
+            console.error('Download error:', error);
+            showToast(`Download failed: ${error.message}`, 'error');
+        } finally {
+            hideLoading();
+        }
+    }
+
+    function showTutorial() {
+        showToast('Tutorial coming soon! For now, enter any playlist or profile URL to extract media links.', 'info');
+    }
+
+    function formatDuration(seconds) {
+        if (!seconds) return 'Unknown';
+        const hours = Math.floor(seconds / 3600);
+        const minutes = Math.floor((seconds % 3600) / 60);
+        const secs = seconds % 60;
+        
+        if (hours > 0) {
+            return `${hours}:${minutes.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+        }
+        return `${minutes}:${secs.toString().padStart(2, '0')}`;
+    }
+
+    // Global functions for single item actions (called from HTML)
+    window.copySingleLink = copySingleLink;
+    window.downloadSingleLink = downloadSingleLink;
+    window.toggleSelection = toggleSelection;
+</script>
+{% endblock %}
